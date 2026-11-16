@@ -9,7 +9,7 @@ async function main() {
   try {
     await seedDatabase(backend);
     const flags = await listFlags(backend);
-    console.log(`✓ Seeded ${flags.length} flags on ${backend.kind}:`);
+    console.log(`✓ Seeded ${flags.length} flags on ${backend.kind === "neon" ? new URL(process.env.DATABASE_URL!).host : "the EMBEDDED local database (DATABASE_URL not set)"}:`);
     for (const f of flags) {
       const prod = f.environments.prod;
       const overrides = prod.overrides.map((o) => `${o.clientId}=${o.enabled ? "ON" : "OFF"}`).join(", ");

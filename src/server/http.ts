@@ -14,10 +14,13 @@ export function errorResponse(err: unknown): Response {
     return json({ error: { code: err.code, message: err.message, details: err.details } }, { status: err.status });
   }
   console.error("[api] unexpected error", err);
-  return json(
-    { error: { code: "internal_error", message: err instanceof Error ? err.message : "Unexpected error" } },
-    { status: 500 },
-  );
+  // Database drivers wrap the real reason (e.g. `relation "flags" does not exist`) in `cause`.
+  const cause = err instanceof Error && err.cause instanceof Error ? err.cause.message : null;
+  const message = cause ?? (err instanceof Error ? err.message : "Unexpected error");
+  const hint = /relation .* does not exist/i.test(message)
+    ? " — the database has no tables yet. Run `npm run db:migrate` and `npm run db:seed` against this DATABASE_URL."
+    : "";
+  return json({ error: { code: "internal_error", message: message + hint } }, { status: 500 });
 }
 
 /** Wrap a handler: inject the DB backend and turn thrown ApiErrors into JSON error responses. */
